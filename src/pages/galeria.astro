@@ -1,0 +1,216 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+const allFotos = (await getCollection('galeria')).sort(
+  (a, b) => (a.data.orden ?? 99) - (b.data.orden ?? 99)
+);
+
+const tipoLabels: Record<string, string> = {
+  boda: 'Bodas',
+  retrato: 'Retratos',
+  familia: 'Familia',
+  eventos: 'Eventos',
+  bautizo: 'Bautizos',
+  cumple: 'Cumpleaños',
+};
+const tiposPresentes = [...new Set(allFotos.map((e) => e.data.tipo).filter(Boolean))] as string[];
+---
+<Layout title="Galería" description="Galería de trabajos de Inti Fotografía.">
+  <section class="w-full py-12 md:py-20 bg-inti-50 mt-8">
+    <div class="w-full max-w-[100vw] mx-auto px-4 sm:px-6 lg:px-8">
+
+      <div class="flex flex-wrap justify-center gap-2 mb-8" id="galeria-filtros" role="tablist">
+        <button type="button" class="galeria-filtro px-4 py-2 rounded-md font-medium bg-inti-700 text-inti-50" data-filtro="todas" aria-pressed="true">
+          Todas
+        </button>
+        <button type="button" class="galeria-filtro px-4 py-2 rounded-md font-medium bg-inti-200 text-inti-700 hover:bg-inti-300" data-filtro="destacadas" aria-pressed="false">
+          Destacadas
+        </button>
+        {tiposPresentes.map((tipo) => (
+          <button type="button" class="galeria-filtro px-4 py-2 rounded-md font-medium bg-inti-200 text-inti-700 hover:bg-inti-300" data-filtro={tipo} aria-pressed="false">
+            {tipoLabels[tipo] ?? tipo}
+          </button>
+        ))}
+      </div>
+
+      <div class="w-full columns-2 md:columns-3 lg:columns-4 gap-4 md:gap-6 [&>*]:mb-4 [&>*]:md:mb-6" id="galeria-grid">
+        {allFotos.map((entry, index) => (
+          <div
+            class="galeria-item break-inside-avoid rounded-lg overflow-hidden border border-inti-200 bg-inti-200 group cursor-pointer"
+            data-index={index}
+            data-titulo={entry.data.titulo}
+            data-descripcion={entry.data.descripcion ?? ''}
+            data-tipo={entry.data.tipo ?? ''}
+            data-destacada={entry.data.destacada ? '1' : '0'}
+          >
+            <img
+              src={entry.data.imagen}
+              alt={entry.data.alt}
+              width={600}
+              height={400}
+              class="w-full h-auto block align-middle transition-transform group-hover:scale-[1.02] galeria-img"
+              loading={index < 8 ? 'eager' : 'lazy'}
+              fetchpriority={index < 4 ? 'high' : undefined}
+              decoding="async"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="w-full py-16 md:py-20 bg-inti-100 border-t border-inti-200">
+    <div class="w-full max-w-[100vw] mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="font-serif text-2xl md:text-3xl font-semibold text-inti-800">
+        ¿Te gustaría un reportaje así?
+      </h2>
+      <p class="mt-3 text-inti-600 max-w-xl mx-auto">
+        Cuéntanos tu fecha y tu idea. Te enviamos un presupuesto sin compromiso.
+      </p>
+      <a
+        href="/contacto"
+        class="inline-flex items-center justify-center mt-6 px-8 py-3 bg-inti-700 text-inti-50 font-medium rounded-md hover:bg-inti-800 transition-colors"
+      >
+        Pedir presupuesto
+      </a>
+    </div>
+  </section>
+
+  <!-- Lightbox: título y descripción solo aquí -->
+  <div id="galeria-lightbox" class="fixed inset-0 z-50 hidden bg-inti-950/95 flex flex-col items-center justify-center p-4" aria-hidden="true">
+    <button type="button" id="lightbox-cerrar" class="absolute top-4 right-4 p-2 rounded-full text-inti-100 hover:bg-inti-800 transition-colors" aria-label="Cerrar">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+    <button type="button" id="lightbox-prev" class="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 rounded-full text-inti-100 hover:bg-inti-800 transition-colors" aria-label="Anterior">
+      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+    </button>
+    <button type="button" id="lightbox-next" class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 rounded-full text-inti-100 hover:bg-inti-800 transition-colors" aria-label="Siguiente">
+      <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </button>
+    <div class="max-w-5xl max-h-[75vh] w-full flex items-center justify-center">
+      <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[75vh] w-auto h-auto object-contain rounded-lg" />
+    </div>
+    <div id="lightbox-caption" class="mt-4 text-inti-100 text-center max-w-xl px-4">
+      <p id="lightbox-titulo" class="font-medium text-base"></p>
+      <p id="lightbox-descripcion" class="text-inti-300 text-sm mt-1"></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const items = document.querySelectorAll('.galeria-item');
+      const filtros = document.querySelectorAll('.galeria-filtro');
+      const lightbox = document.getElementById('galeria-lightbox');
+
+      function aplicarFiltro(filtro: string) {
+        filtros.forEach((btn) => {
+          const isActive = (btn as HTMLElement).getAttribute('data-filtro') === filtro;
+          btn.setAttribute('aria-pressed', String(isActive));
+          if (isActive) {
+            btn.classList.remove('bg-inti-200', 'text-inti-700');
+            btn.classList.add('bg-inti-700', 'text-inti-50');
+          } else {
+            btn.classList.remove('bg-inti-700', 'text-inti-50');
+            btn.classList.add('bg-inti-200', 'text-inti-700');
+          }
+        });
+        items.forEach((el) => {
+          const tipo = (el as HTMLElement).getAttribute('data-tipo') || '';
+          const destacada = (el as HTMLElement).getAttribute('data-destacada') === '1';
+          const show =
+            filtro === 'todas' ||
+            (filtro === 'destacadas' && destacada) ||
+            (filtro !== 'destacadas' && tipo === filtro);
+          (el as HTMLElement).style.display = show ? '' : 'none';
+        });
+      }
+
+      filtros.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          aplicarFiltro((btn as HTMLElement).getAttribute('data-filtro') || 'todas');
+        });
+      });
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxTitulo = document.getElementById('lightbox-titulo');
+      const lightboxDescripcion = document.getElementById('lightbox-descripcion');
+      const btnCerrar = document.getElementById('lightbox-cerrar');
+      const btnPrev = document.getElementById('lightbox-prev');
+      const btnNext = document.getElementById('lightbox-next');
+
+      function openLightbox(index) {
+        const list = Array.from(items);
+        if (!list.length) return;
+        const idx = ((index % list.length) + list.length) % list.length;
+        const el = list[idx];
+        const img = el.querySelector('.galeria-img');
+        if (!img) return;
+        lightboxImg.src = img.src;
+        lightboxImg.alt = img.alt;
+        lightboxTitulo.textContent = el.getAttribute('data-titulo') || '';
+        lightboxDescripcion.textContent = el.getAttribute('data-descripcion') || '';
+        lightboxDescripcion.style.display = lightboxDescripcion.textContent ? '' : 'none';
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        window.__galeriaLightboxIndex = idx;
+        window.__galeriaLightboxList = list;
+      }
+
+      function closeLightbox() {
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      function lightboxPrev() {
+        const list = window.__galeriaLightboxList;
+        if (!list) return;
+        const idx = (window.__galeriaLightboxIndex - 1 + list.length) % list.length;
+        window.__galeriaLightboxIndex = idx;
+        const el = list[idx];
+        const img = el.querySelector('.galeria-img');
+        if (img) {
+          lightboxImg.src = img.src;
+          lightboxImg.alt = img.alt;
+          lightboxTitulo.textContent = el.getAttribute('data-titulo') || '';
+          lightboxDescripcion.textContent = el.getAttribute('data-descripcion') || '';
+          lightboxDescripcion.style.display = lightboxDescripcion.textContent ? '' : 'none';
+        }
+      }
+
+      function lightboxNext() {
+        const list = window.__galeriaLightboxList;
+        if (!list) return;
+        const idx = (window.__galeriaLightboxIndex + 1) % list.length;
+        window.__galeriaLightboxIndex = idx;
+        const el = list[idx];
+        const img = el.querySelector('.galeria-img');
+        if (img) {
+          lightboxImg.src = img.src;
+          lightboxImg.alt = img.alt;
+          lightboxTitulo.textContent = el.getAttribute('data-titulo') || '';
+          lightboxDescripcion.textContent = el.getAttribute('data-descripcion') || '';
+          lightboxDescripcion.style.display = lightboxDescripcion.textContent ? '' : 'none';
+        }
+      }
+
+      items.forEach((el, i) => {
+        el.addEventListener('click', () => openLightbox(i));
+      });
+      btnCerrar?.addEventListener('click', closeLightbox);
+      btnPrev?.addEventListener('click', lightboxPrev);
+      btnNext?.addEventListener('click', lightboxNext);
+      lightbox?.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+      document.addEventListener('keydown', (e) => {
+        if (lightbox?.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') lightboxPrev();
+        if (e.key === 'ArrowRight') lightboxNext();
+      });
+    })();
+  </script>
+</Layout>

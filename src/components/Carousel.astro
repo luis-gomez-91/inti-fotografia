@@ -1,0 +1,75 @@
+---
+interface Props {
+  images: { src: string; alt: string }[];
+  id?: string;
+}
+const { images, id = 'carousel' } = Astro.props;
+---
+<div class="carousel w-full overflow-hidden" id={id} data-carousel>
+  <div class="carousel-track flex transition-transform duration-500 ease-out" data-track>
+    {images.map((img, i) => (
+      <div class="carousel-slide min-w-full flex-shrink-0" data-slide>
+        <div class="aspect-[16/10] w-full bg-inti-200">
+          <img
+            src={img.src}
+            alt={img.alt}
+            class="w-full h-full object-cover"
+            width="1200"
+            height="750"
+            loading={i === 0 ? 'eager' : 'lazy'}
+          />
+        </div>
+      </div>
+    ))}
+  </div>
+  <div class="flex justify-center gap-2 mt-4">
+    <button type="button" aria-label="Anterior" class="carousel-prev px-4 py-2 rounded-md bg-inti-200 text-inti-800 hover:bg-inti-300 transition-colors font-medium text-sm">
+      Anterior
+    </button>
+    <span class="carousel-dots flex items-center gap-1" data-dots></span>
+    <button type="button" aria-label="Siguiente" class="carousel-next px-4 py-2 rounded-md bg-inti-200 text-inti-800 hover:bg-inti-300 transition-colors font-medium text-sm">
+      Siguiente
+    </button>
+  </div>
+</div>
+<script define:vars={{ carouselId: id }}>
+  (function () {
+    const el = document.getElementById(carouselId);
+    if (!el) return;
+    const track = el.querySelector('[data-track]');
+    const slides = el.querySelectorAll('[data-slide]');
+    const total = slides.length;
+    if (total === 0) return;
+    const prev = el.querySelector('.carousel-prev');
+    const next = el.querySelector('.carousel-next');
+    const dotsContainer = el.querySelector('[data-dots]');
+    let index = 0;
+
+    function goTo(i) {
+      index = ((i % total) + total) % total;
+      if (track) track.style.transform = `translateX(-${index * 100}%)`;
+      dotsContainer?.querySelectorAll('button').forEach((btn, j) => {
+        btn.setAttribute('aria-current', j === index ? 'true' : 'false');
+        btn.classList.toggle('bg-inti-600', j === index);
+        btn.classList.toggle('bg-inti-300', j !== index);
+      });
+    }
+
+    for (let i = 0; i < total; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'w-2.5 h-2.5 rounded-full transition-colors ' + (i === 0 ? 'bg-inti-600' : 'bg-inti-300');
+      btn.setAttribute('aria-label', 'Ir a imagen ' + (i + 1));
+      btn.setAttribute('aria-current', i === 0 ? 'true' : 'false');
+      btn.addEventListener('click', () => goTo(i));
+      dotsContainer?.appendChild(btn);
+    }
+
+    prev?.addEventListener('click', () => goTo(index - 1));
+    next?.addEventListener('click', () => goTo(index + 1));
+
+    let autoplay = setInterval(() => goTo(index + 1), 5000);
+    el.addEventListener('mouseenter', () => clearInterval(autoplay));
+    el.addEventListener('mouseleave', () => { autoplay = setInterval(() => goTo(index + 1), 5000); });
+  })();
+</script>

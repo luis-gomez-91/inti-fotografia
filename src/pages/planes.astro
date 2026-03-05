@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const planes = [
+  {
+    nombre: 'Esencial',
+    descripcion: 'Ideal para eventos íntimos o sesiones cortas.',
+    precio: 'Desde 299',
+    moneda: '€',
+    items: ['Hasta 2 horas de cobertura', '50 fotos editadas', 'Entrega digital', 'Sesión en una locación'],
+    destacado: false,
+  },
+  {
+    nombre: 'Completo',
+    descripcion: 'Bodas y eventos de día completo.',
+    precio: '699',
+    moneda: '€',
+    items: ['Cobertura de 8 horas', '200+ fotos editadas', 'Álbum físico incluido', 'Sesión de preboda', 'Entrega digital en alta resolución'],
+    destacado: true,
+  },
+  {
+    nombre: 'Premium',
+    descripcion: 'Experiencia total con segundo fotógrafo.',
+    precio: '1.199',
+    moneda: '€',
+    items: ['Todo lo de Completo', 'Segundo fotógrafo', 'Cobertura de 12 horas', 'Álbum de lujo', 'Sesión de preboda + día D'],
+    destacado: false,
+  },
+];
+---
+<Layout title="Planes" description="Planes y precios de Inti Fotografía. Bodas, retratos y eventos.">
+  <section class="w-full min-h-screen pt-16 md:pt-20 bg-inti-50 flex flex-col">
+    <div class="w-full max-w-[100vw] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)]">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+        {planes.map((plan) => (
+          <article
+            class:list={[
+              'rounded-xl border p-8 flex flex-col',
+              plan.destacado
+                ? 'bg-inti-800 text-inti-100 border-inti-700 shadow-lg scale-[1.02] md:scale-105'
+                : 'bg-inti-100 border-inti-200 text-inti-800',
+            ]}
+          >
+            {plan.destacado && (
+              <span class="text-xs font-medium uppercase tracking-wider text-inti-300 mb-2">Más elegido</span>
+            )}
+            <h2 class="font-serif text-2xl font-semibold">{plan.nombre}</h2>
+            <p class:list={['mt-2 text-sm', plan.destacado ? 'text-inti-300' : 'text-inti-600']}>
+              {plan.descripcion}
+            </p>
+            <div class="mt-6 flex items-baseline gap-1">
+              <span class="font-serif text-4xl font-semibold">{plan.precio}</span>
+              <span class="text-lg opacity-80">{plan.moneda}</span>
+            </div>
+            <ul class="mt-8 flex-1 space-y-3">
+              {plan.items.map((item) => (
+                <li class="flex items-start gap-2 text-sm">
+                  <span class="text-inti-500 mt-0.5">✓</span>
+                  <span class={plan.destacado ? 'text-inti-200' : 'text-inti-700'}>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <a
+              href="/contacto"
+              class:list={[
+                'mt-8 block text-center py-3 px-4 rounded-md font-medium text-sm transition-colors',
+                plan.destacado
+                  ? 'bg-inti-100 text-inti-900 hover:bg-inti-50'
+                  : 'bg-inti-700 text-inti-50 hover:bg-inti-800',
+              ]}
+            >
+              Solicitar presupuesto
+            </a>
+          </article>
+        ))}
+      </div>
+
+      <p class="mt-12 text-center text-sm text-inti-500">
+        Los precios son orientativos. Contacta con nosotros para un presupuesto personalizado.
+      </p>
+    </div>
+  </section>
+</Layout>

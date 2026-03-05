@@ -1,0 +1,160 @@
+---
+const currentPath = Astro.url.pathname;
+const isHome = currentPath === '/';
+const navItems = [
+  { href: '/', label: 'Inicio' },
+  { href: '/planes', label: 'Planes' },
+  { href: '/galeria', label: 'Galería' },
+  { href: '/contacto', label: 'Contacto' },
+];
+
+const navBase = 'fixed top-0 left-0 right-0 z-50 w-full border-b transition-all duration-300';
+const navBg = isHome
+  ? 'bg-transparent border-transparent'
+  : 'bg-inti-50/95 backdrop-blur border-inti-200 supports-[backdrop-filter]:bg-inti-50/80';
+---
+<nav
+  id="main-nav"
+  class={`${navBase} ${navBg}`}
+  data-home={isHome ? 'true' : undefined}
+>
+  <div class="w-full max-w-[100vw] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16 md:h-20">
+      <a
+        href="/"
+        class="nav-logo font-serif text-xl md:text-2xl font-semibold tracking-tight"
+        class:list={[isHome ? 'text-white' : 'text-inti-800']}
+      >
+        Inti Fotografía
+      </a>
+      <button
+        type="button"
+        id="menu-toggle"
+        aria-label="Abrir menú"
+        class="nav-toggle md:hidden p-2 rounded-md transition-colors"
+        class:list={[isHome ? 'text-white hover:bg-white/20' : 'text-inti-700 hover:bg-inti-200']}
+      >
+        <svg class="w-6 h-6 menu-icon-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg class="w-6 h-6 menu-icon-close hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <ul class="hidden md:flex items-center gap-6 md:gap-8" id="nav-desktop">
+        {navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class="nav-link text-sm md:text-base font-medium transition-colors"
+              class:list={[
+                isHome
+                  ? currentPath === item.href
+                    ? 'text-white border-b-2 border-white'
+                    : 'text-white/90 hover:text-white'
+                  : currentPath === item.href
+                    ? 'text-inti-700 border-b-2 border-inti-600'
+                    : 'text-inti-600 hover:text-inti-800',
+              ]}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div id="nav-mobile" class="nav-mobile-panel hidden md:hidden pb-4 border-t border-transparent">
+      <ul class="flex flex-col gap-2 pt-4">
+        {navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class="nav-mobile-link block py-2 text-base font-medium transition-colors"
+              class:list={[
+                isHome
+                  ? 'text-white'
+                  : currentPath === item.href
+                    ? 'text-inti-700'
+                    : 'text-inti-600 hover:text-inti-800',
+              ]}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</nav>
+<script>
+  (function () {
+    const nav = document.getElementById('main-nav');
+    if (!nav || nav.dataset.home !== 'true') return;
+    const logo = nav.querySelector('.nav-logo');
+    const links = nav.querySelectorAll('.nav-link');
+    const mobileLinks = nav.querySelectorAll('.nav-mobile-link');
+    const toggleBtn = nav.querySelector('.nav-toggle');
+    const mobilePanel = nav.querySelector('.nav-mobile-panel');
+
+    function setScrolled(scrolled) {
+      if (scrolled) {
+        nav.classList.add('bg-inti-50/95', 'border-inti-200', 'backdrop-blur');
+        nav.classList.remove('bg-transparent', 'border-transparent');
+        logo?.classList.replace('text-white', 'text-inti-800');
+        links.forEach((a) => {
+          a.classList.remove('text-white', 'text-white/90', 'border-white');
+          a.classList.add('text-inti-600');
+          if (a.getAttribute('href') === window.location.pathname) {
+            a.classList.add('text-inti-700', 'border-b-2', 'border-inti-600');
+          }
+        });
+        mobileLinks.forEach((a) => a.classList.replace('text-white', 'text-inti-700'));
+        toggleBtn?.classList.replace('text-white', 'text-inti-700');
+        toggleBtn?.classList.replace('hover:bg-white/20', 'hover:bg-inti-200');
+        mobilePanel?.classList.replace('border-transparent', 'border-inti-200');
+      } else {
+        nav.classList.remove('bg-inti-50/95', 'border-inti-200', 'backdrop-blur');
+        nav.classList.add('bg-transparent', 'border-transparent');
+        logo?.classList.replace('text-inti-800', 'text-white');
+        const path = window.location.pathname;
+        links.forEach((a) => {
+          a.classList.remove('text-inti-600', 'text-inti-700', 'border-inti-600');
+          if (a.getAttribute('href') === path) {
+            a.classList.add('text-white', 'border-b-2', 'border-white');
+          } else {
+            a.classList.add('text-white/90');
+          }
+        });
+        mobileLinks.forEach((a) => a.classList.replace('text-inti-700', 'text-white'));
+        toggleBtn?.classList.replace('text-inti-700', 'text-white');
+        toggleBtn?.classList.replace('hover:bg-inti-200', 'hover:bg-white/20');
+        mobilePanel?.classList.replace('border-inti-200', 'border-transparent');
+      }
+    }
+
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 20);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+    setScrolled(window.scrollY > 20);
+  })();
+
+  const toggle = document.getElementById('menu-toggle');
+  const mobileNav = document.getElementById('nav-mobile');
+  const openIcon = document.querySelector('.menu-icon-open');
+  const closeIcon = document.querySelector('.menu-icon-close');
+  if (toggle && mobileNav && openIcon && closeIcon) {
+    toggle.addEventListener('click', () => {
+      const isOpen = !mobileNav.classList.contains('hidden');
+      mobileNav.classList.toggle('hidden');
+      openIcon.classList.toggle('hidden', !isOpen);
+      closeIcon.classList.toggle('hidden', isOpen);
+    });
+  }
+</script>

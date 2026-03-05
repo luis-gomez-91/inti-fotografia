@@ -1,0 +1,74 @@
+---
+interface Props {
+  images: { src: string; alt: string }[];
+  id?: string;
+  intervalMs?: number;
+}
+const { images, id = 'hero-carousel', intervalMs = 5000 } = Astro.props;
+---
+<div class="hero-carousel relative w-full h-screen min-h-[100vh] overflow-hidden bg-inti-900" id={id} data-hero-carousel>
+  <div class="hero-carousel-track flex h-full transition-transform duration-700 ease-out" data-track>
+    {images.map((img, i) => (
+      <div class="hero-carousel-slide min-w-full h-full flex-shrink-0" data-slide>
+        <img
+          src={img.src}
+          alt={img.alt}
+          class="w-full h-full object-cover"
+          width="1920"
+          height="1080"
+          loading={i === 0 ? 'eager' : 'lazy'}
+          fetchpriority={i === 0 ? 'high' : undefined}
+        />
+      </div>
+    ))}
+  </div>
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-inti-950/90 to-transparent pointer-events-none" aria-hidden="true"></div>
+  <div class="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-2 z-10" data-dots aria-label="Navegación del carrusel"></div>
+  <button type="button" aria-label="Imagen anterior" class="hero-carousel-prev absolute left-2 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-inti-950/50 text-inti-100 hover:bg-inti-950/80 transition-colors flex items-center justify-center">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+  </button>
+  <button type="button" aria-label="Imagen siguiente" class="hero-carousel-next absolute right-2 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-inti-950/50 text-inti-100 hover:bg-inti-950/80 transition-colors flex items-center justify-center">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+  </button>
+</div>
+<script define:vars={{ carouselId: id, intervalMs }}>
+  (function () {
+    const el = document.getElementById(carouselId);
+    if (!el) return;
+    const track = el.querySelector('[data-track]');
+    const slides = el.querySelectorAll('[data-slide]');
+    const total = slides.length;
+    if (total === 0) return;
+    const prev = el.querySelector('.hero-carousel-prev');
+    const next = el.querySelector('.hero-carousel-next');
+    const dotsContainer = el.querySelector('[data-dots]');
+    let index = 0;
+
+    function goTo(i) {
+      index = ((i % total) + total) % total;
+      if (track) track.style.transform = `translateX(-${index * 100}%)`;
+      dotsContainer?.querySelectorAll('button').forEach((btn, j) => {
+        btn.setAttribute('aria-current', j === index ? 'true' : 'false');
+        btn.classList.toggle('opacity-100', j === index);
+        btn.classList.toggle('opacity-50', j !== index);
+      });
+    }
+
+    for (let i = 0; i < total; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'w-2.5 h-2.5 rounded-full bg-inti-100 transition-opacity ' + (i === 0 ? 'opacity-100' : 'opacity-50');
+      btn.setAttribute('aria-label', 'Ir a imagen ' + (i + 1));
+      btn.setAttribute('aria-current', i === 0 ? 'true' : 'false');
+      btn.addEventListener('click', () => goTo(i));
+      dotsContainer?.appendChild(btn);
+    }
+
+    prev?.addEventListener('click', () => goTo(index - 1));
+    next?.addEventListener('click', () => goTo(index + 1));
+
+    let autoplay = setInterval(() => goTo(index + 1), intervalMs);
+    el.addEventListener('mouseenter', () => clearInterval(autoplay));
+    el.addEventListener('mouseleave', () => { autoplay = setInterval(() => goTo(index + 1), intervalMs); });
+  })();
+</script>
